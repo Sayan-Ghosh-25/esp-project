@@ -10,10 +10,10 @@ This web app predicts the expected salary of an employee based on professional a
 ## 📸 Preview
 
 ### 🧾 Input Form
-![Input Form](https://github.com/Sayan-Ghosh-25/salary-predictor/blob/main/assets/Preview-1.png?raw=true)
+![Input Form](https://github.com/Sayan-Ghosh-25/esp-project/blob/main/assets/Preview-1.png?raw=true)
 
 ### 📈 Predicted Salary Output
-![Prediction Output](https://github.com/Sayan-Ghosh-25/salary-predictor/blob/main/assets/Preview-2.png?raw=true)
+![Prediction Output](https://github.com/Sayan-Ghosh-25/esp-project/blob/main/assets/Preview-2.png?raw=true)
 
 ---
 
