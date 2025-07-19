@@ -41,9 +41,10 @@ This web app predicts the expected salary of an employee based on professional a
 ## 📦 Tech Stack
 
 - `streamlit` – UI & deployment
-- `pandas` – data manipulation
-- `scikit-learn` – model training and prediction
-- `gdown`, `requests` – fetch dataset from Google Drive
+- `pandas` – Data manipulation
+- `numpy` – Numerical analysis
+- `scikit-learn` – Model training and prediction
+- `gdown`, `requests` – Fetch dataset from Google Drive
 
 ---
 

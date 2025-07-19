@@ -3,13 +3,14 @@ import requests
 import gdown
 import streamlit as st
 import pandas as pd
+import numpy as np
 from sklearn.model_selection import train_test_split
 from sklearn.ensemble import RandomForestRegressor
 
 # ─── Parameters ───
-df_columns = ['Gender','Department','Job_Title','Education_Level','Location']
-CSV_URL   = "https://drive.google.com/uc?export=download&id=1ghlU4g5ISe1_Q5FDF7N9g_POLVszRJBg"
-CSV_FILE  = "Employers_Data.csv"
+df_columns = ['Industry', 'Job_Title', 'Experience_Level', 'Educational_Level', 'Location']
+CSV_URL   = "https://drive.google.com/uc?export=download&id=15iVSngbLNU_Z6zcGl_ZZawG_dDbd-pih"
+CSV_FILE  = "Refined Employers Data.csv"
 
 # ─── Download Helper ───
 def download_if_missing(url: str, filename: str):
@@ -29,30 +30,23 @@ def download_if_missing(url: str, filename: str):
 @st.cache_data
 def load_data():
     download_if_missing(CSV_URL, CSV_FILE)
-
     df = pd.read_csv(CSV_FILE)
-    df.drop(columns=['Name','Employee_ID'], inplace=True)
     df.dropna(inplace=True)
 
-    df.replace({'Location':{
-        'Austin':'India','Seattle':'Australia',
-        'Chicago':'America','New York':'England',
-        'San Francisco':'Dubai'
-    }}, inplace=True)
+    np.random.seed(37)
+    df['Salary'] = (df['Salary'] * np.random.uniform(0.95, 1.05, size=len(df))).round().astype(int)
 
     ip = df.drop(columns=['Salary'])
     op = df['Salary']
 
-    ip_train, ip_test, op_train, op_test = train_test_split(ip, op, test_size=0.2, random_state=42)
-
+    ip_train, ip_test, op_train, op_test = train_test_split(ip, op, test_size=0.2, random_state=37)
     ip_train_enc = pd.get_dummies(ip_train,columns=df_columns,drop_first=False)
-
     return df, ip_train_enc, op_train, ip_test, op_test, ip_train_enc.columns.to_list()
 
 # ─── Train Model (Cached) ───
 @st.cache_resource
 def train_model(ip_train_enc, op_train):
-    rf = RandomForestRegressor(n_estimators=450, random_state=42, n_jobs=-1)
+    rf = RandomForestRegressor(n_estimators=450, max_depth = None, random_state=37, n_jobs=-1)
     rf.fit(ip_train_enc, op_train)
     return rf
 
@@ -61,38 +55,109 @@ st.set_page_config(page_title="Salary Predictor", layout="centered")
 st.title("💼 *Salary Prediction System*")
 st.header("Enter Employee Details")
 
-# Global Loading
-df, X_train_enc, y_train, X_test, y_test, MODEL_COLS = load_data()
-model = train_model(X_train_enc, y_train)
-
-# User Inputs
-Age = st.number_input("Age", 18, 70, 25, key="age_select")
-Gender = st.selectbox("Gender", ["Select"] + sorted(df['Gender'].unique()), key="gender_select")
-Dept   = st.selectbox("Department", ["Select"] + sorted(df['Department'].unique()), key="department_select")
-Job    = st.selectbox("Job Title", ["Select"] + sorted(df['Job_Title'].unique()), key="job_title_select")
-Exp    = st.number_input("Experience Years", 0, 50, 2, key="experience_years_select")
-Edu    = st.selectbox("Education Level", ["Select"] + sorted(df['Education_Level'].unique()), key="education_level_select")
-Loc    = st.selectbox("Location", ["Select"] + sorted(df['Location'].unique()), key="location_select")
-
-# Model Prediction
-if st.button("Check Salary", key="check_salary"):
-    if "Select" in [Gender,Dept,Job,Edu,Loc]:
-        st.error("⚠️ Please Fill All The Fields!")
+# ─── Reset Helper ───
+def clear_all():
+    keys = ["industry_select", "job_select", "exp_select", "edu_select", "location_select", "previous_industry"]
+    if all(st.session_state.get(k, "Select") == "Select" for k in keys):
+        st.session_state.show_clear_error = True
     else:
-        sample = pd.DataFrame([{
-            'Age': Age,
-            'Gender': Gender.strip().title(),
-            'Department': Dept.strip().title(),
-            'Job_Title': Job.strip().title(),
-            'Experience_Years': Exp,
-            'Education_Level': Edu.strip().title(),
-            'Location': Loc.strip().title(),
-        }])
+        for k in keys:
+            st.session_state[k] = "Select"
+        st.session_state.show_clear_error = False
 
-        # User Input Encoding
-        sample_enc = pd.get_dummies(sample, columns=df_columns, drop_first=False)
-        sample_enc = sample_enc.reindex(columns=MODEL_COLS, fill_value=0)
+if st.session_state.get("show_clear_error", False):
+    st.error("⚠️ Nothing To Clear!")
+    st.session_state.show_clear_error = False
 
-        # User Salary Prediction
-        pred = model.predict(sample_enc)[0]
-        st.success(f"💰 Expected Salary: ₹{pred:,.0f}")
+# ─── Global Loading ───
+df, ip_train_enc, op_train, ip_test, op_test, MODEL_COLS = load_data()
+model = train_model(ip_train_enc, op_train)
+
+# ─── User Inputs ───
+# Step 1: Industry Selection
+Ins = st.selectbox("Industry", ["Select"] + sorted(df['Industry'].unique()), key="industry_select")
+if "previous_industry" not in st.session_state or st.session_state.previous_industry != Ins:
+    st.session_state.job_select = "Select"
+st.session_state.previous_industry = Ins
+
+# Step 2: Job Titles Based on Industry
+job_options = ["Select"]
+
+if Ins == "Finance":
+    job_options += ["HR", "Analyst", "Manager", "Executive"]
+elif Ins == "Education":
+    job_options += ["Clerk", "Teacher", "Department Head", "Institute Head"]
+elif Ins in ["Technology", "Transportation", "Manufacturing"]:
+    job_options += ["Intern", "Engineer", "HR", "Manager", "Executive"]
+elif Ins == "Healthcare":
+    job_options += ["Staff", "Doctor", "Management Head", "Executive"]
+elif Ins == "Retail":
+    job_options += ["Intern", "Analyst", "Manager", "Executive"]
+else:
+    job_options += sorted(df[df["Industry"] == Ins]["Job_Title"].unique())
+
+Job = st.selectbox("Job Title", job_options, key="job_select")
+
+# Step 3: Experience Level Based on Job
+exp_options = ["Select"]
+
+if Job == "Intern":
+    exp_options += ["Entry-Level"]
+elif Job in ["Analyst", "Staff", "Clerk"]:
+    exp_options += ["Entry-Level", "Mid-Level"]
+elif Job == "HR":
+    exp_options += ["Mid-Level"]
+elif Job in ["Engineer", "Teacher", "Doctor"]:
+    exp_options += ["Entry-Level", "Mid-Level", "Senior-Level"]
+elif Job in ["Manager", "Department Head", "Management Head"]:
+    exp_options += ["Mid-Level", "Senior-Level"]
+elif Job in ["Executive", "Institute Head"]:
+    exp_options += ["Senior-Level"]
+
+Exp = st.selectbox("Experience Level", exp_options, key="exp_select")
+
+# Step 4: Education Level Based on Experience
+edu_options = ["Select"]
+
+if Exp in ["Entry-Level", "Mid-Level"]:
+    edu_options += ["Bachelor", "Master"]
+elif Exp == "Senior-Level":
+    edu_options += ["Master", "PhD"]
+
+Edu = st.selectbox("Educational Qualification", edu_options, key="edu_select")
+
+# Step 5: Location
+loc_options = ["Select"]
+
+if Exp != "Select":
+    loc_options += ["America", "Australia", "Dubai", "England", "India"]
+
+Loc = st.selectbox("Location", loc_options, key="location_select")
+
+# ─── Buttons Section ───
+col1, col2 = st.columns([1,7])
+with col1:
+    # ─── Clear Selections ───
+    st.button("Clear All", key="clear_choices", on_click=clear_all)
+
+with col2:
+    # ─── Model Prediction ───
+    if st.button("Check Salary", key="check_salary"):
+        if "Select" in [Ins, Job, Edu, Loc]:
+            st.error("⚠️ Please Fill All The Fields!")
+        else:
+            sample = pd.DataFrame([{
+                'Industry': Ins.strip().title(),
+                'Job_Title': Job.strip().title(),
+                'Experience_Level': Exp.strip().title(),
+                'Educational_Level': Edu.strip().title(),
+                'Location': Loc.strip().title(),
+            }])
+
+            # User Input Encoding
+            sample_enc = pd.get_dummies(sample, columns=df_columns, drop_first=False)
+            sample_enc = sample_enc.reindex(columns=MODEL_COLS, fill_value=0)
+
+            # User Salary Prediction
+            pred = model.predict(sample_enc)[0]
+            st.success(f"💰 Expected Salary (Per Annum): ₹{pred:,.0f}/-")
