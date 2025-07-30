@@ -1,7 +1,7 @@
 # 💼 Salary Predictor App
 
-Welcome to your **AI-powered Employee Salary Estimator**!  
-This web app predicts the expected salary of an employee based on professional attributes like age, experience, job title, location, education level, and more.
+Welcome to the **AI-Powered Salary Prediction System**!  
+This intelligent web app predicts the **annual salary** of an employee based on their job profile, industry, experience level, education, and location.
 
 🔗 **Live App**: [Launch Salary Predictor](https://salary-predictor-sg25.streamlit.app)
 
@@ -19,47 +19,48 @@ This web app predicts the expected salary of an employee based on professional a
 
 ## 🚀 Features
 
-- 📋 Fill in employee details using clean, interactive dropdowns and number fields.
-- 🔍 Predict salary in real-time based on a **trained machine learning model**.
-- 💡 Input values are automatically standardized for accuracy (e.g. title-casing, space trimming).
-- ⚙️ Dataset automatically downloaded from **Google Drive** if not found locally.
-- 🔐 Robust model feature alignment prevents shape mismatch or incorrect predictions.
-- ⚡ Fast performance using Streamlit’s built-in caching (`st.cache_data` & `st.cache_resource`).
-- 🧑‍💼 Built for HR, recruiters, analysts, and developers to test salary scenarios.
+- 🎛️ Smart dropdown system that dynamically adjusts based on previous selections (e.g., Industry → Job → Experience).
+- 🧠 Salary predicted in real-time using a **trained ML model** (Random Forest Regressor).
+- 💡 Intelligent form cleanup with reset handling and empty validation.
+- 🔐 Automatic feature alignment via `one-hot encoding` to match training-time schema.
+- 📂 Compatible with `.pkl` model loading for fast offline predictions.
+- ✅ Clean UI built using **Streamlit** with a centered layout.
 
 ---
 
-## 🧠 How It Works
+## ⚙️ How It Works
 
-- Built using **Streamlit** for the front-end UI.
-- Uses a **Random Forest Regressor** from `scikit-learn`, trained on a cleaned employee dataset.
-- Categorical features are fully one-hot encoded (no `drop_first`), ensuring full feature capture.
-- The prediction is made based on the trained model using real-time user input.
-
----
-
-## 📦 Tech Stack
-
-- `streamlit` – UI & deployment
-- `pandas` – Data manipulation
-- `numpy` – Numerical analysis
-- `scikit-learn` – Model training and prediction
-- `gdown`, `requests` – Fetch dataset from Google Drive
+- The app is built entirely with **Streamlit** for the frontend.
+- A **Random Forest Regressor** is trained on cleaned employee data.
+- User input is captured through dropdowns and encoded using `pd.get_dummies()`.
+- The encoded data is reindexed to match training columns before prediction.
+- Predictions are displayed instantly with proper formatting.
 
 ---
 
-## 🛠️ Project Structure
+## 🧠 Tech Stack
+
+- `streamlit` – Web interface
+- `pandas` – Data handling
+- `scikit-learn` – Machine learning
+- `pickle` – Model loading
+- `python` – Backend logic
+
+---
+
+## 📁 Project Structure
 
 ```
 Salary-Predictor/
 │
-├── .streamlit/
-│   └── config.toml        # Streamlit Cloud Settings
 ├── assets/
-│   ├── Preview-1.png # Input form screenshot
-│   └── Preview-2.png # Prediction output screenshot
-├── app.py # Streamlit main app
+│ ├── Preview-1.png # Screenshot of Input Form
+│ └── Preview-2.png # Screenshot of Output
+├── Model.pkl # Trained Random Forest Model
+├── Train_Cols.pkl # Column List for Reindexing
+├── app.py # Main Streamlit App
 ├── requirements.txt # Python Dependencies
+├── FESP.ipynb # Model Training Code
 └── README.md # You're Reading It!
 ```
 
